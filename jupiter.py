@@ -33,11 +33,16 @@ with open(KEYPATH, 'r') as f:
     address = f.readline().strip()
     exported_secret = f.readline().strip()
 
+print(f"Address: {address}")
+print(f"Exported Secret (Base58): {exported_secret}")
+
+
 exported_bytes=base58.b58decode(exported_secret)
 kp = Keypair.from_bytes(exported_bytes)
 
 # sanity check
 assert str(kp.pubkey()) == address, f"{kp.pubkey()} != {address}"
+
 class JupiterExchange:
     def __init__(self):
         self.amount_to_buy_usdc = Decimal(input('enter amount to buy in usdc:\t').strip())
