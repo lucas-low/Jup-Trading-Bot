@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "edge"
+version = "0.1.0"
+description = ""
+authors = ["Lucas Low"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+solders = "^0.19.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

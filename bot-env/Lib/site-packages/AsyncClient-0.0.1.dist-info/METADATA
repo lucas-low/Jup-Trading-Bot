@@ -1,0 +1,11 @@
+Metadata-Version: 2.1
+Name: AsyncClient
+Version: 0.0.1
+Summary: Chat with encryption
+Author: Ekaterina Eranova
+Author-email: kteranova@mail.ru
+Requires-Dist: PyQt5
+Requires-Dist: sqlalchemy
+Requires-Dist: pycryptodome
+Requires-Dist: pycryptodomex
+

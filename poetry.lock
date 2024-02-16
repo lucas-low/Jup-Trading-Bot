@@ -1,0 +1,53 @@
+[[package]]
+name = "jsonalias"
+version = "0.1.1"
+description = "A microlibrary that defines a Json type alias for Python."
+category = "main"
+optional = false
+python-versions = ">=3.7,<4.0"
+
+[[package]]
+name = "solders"
+version = "0.19.0"
+description = "Python bindings for Solana Rust tools"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+jsonalias = "0.1.1"
+typing-extensions = ">=4.2.0"
+
+[[package]]
+name = "typing-extensions"
+version = "4.9.0"
+description = "Backported and Experimental Type Hints for Python 3.8+"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[metadata]
+lock-version = "1.1"
+python-versions = "^3.12"
+content-hash = "15f68e362bad9aa73bb54e8ef8cf206803213e990de7297e035389a6a77bf526"
+
+[metadata.files]
+jsonalias = [
+    {file = "jsonalias-0.1.1-py3-none-any.whl", hash = "sha256:a56d2888e6397812c606156504e861e8ec00e188005af149f003c787db3d3f18"},
+    {file = "jsonalias-0.1.1.tar.gz", hash = "sha256:64f04d935397d579fc94509e1fcb6212f2d081235d9d6395bd10baedf760a769"},
+]
+solders = [
+    {file = "solders-0.19.0-cp37-abi3-macosx_10_9_x86_64.macosx_11_0_arm64.macosx_10_9_universal2.whl", hash = "sha256:f7058bde8a83c469cf473a21ea7b1709a2288d7f389953fbc8e6930b6b7c8340"},
+    {file = "solders-0.19.0-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8e269cfc6d35c3e50612ae6139e82b96ae14bb7ae3b49e90ec51084bb2b73bc2"},
+    {file = "solders-0.19.0-cp37-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:f887d1eb4e64ec31fbb5228697bb7f562bb8fd91765e4c9e96729bd4b423d326"},
+    {file = "solders-0.19.0-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:44713e86ba1774fb2629ac94f4a3eb302867ff38df771649314b60225dc23a47"},
+    {file = "solders-0.19.0-cp37-abi3-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:d47628e7afe40a208974da1a9c1e8aea0daa18fbacf4c8c4cbdd7a87297b9d6b"},
+    {file = "solders-0.19.0-cp37-abi3-musllinux_1_2_i686.whl", hash = "sha256:3ac5486f9f1a87375647cdf6d87468c8aa6ee656059041eeeba5688d45d76756"},
+    {file = "solders-0.19.0-cp37-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:f636273ab0d733e6cd8c03589e80a09b47a660911b716c56039027aec249c2fa"},
+    {file = "solders-0.19.0-cp37-abi3-win_amd64.whl", hash = "sha256:eeaa1289b3da9138c887853c315ecb139dcd3687bacf2ea5d9cb5855f7289f7d"},
+    {file = "solders-0.19.0.tar.gz", hash = "sha256:939d25a546cb499484255ea6aa19649b56208ad6566798f794c8268262cd811e"},
+]
+typing-extensions = [
+    {file = "typing_extensions-4.9.0-py3-none-any.whl", hash = "sha256:af72aea155e91adfc61c3ae9e0e342dbc0cba726d6cba4b6c72c1f34e47291cd"},
+    {file = "typing_extensions-4.9.0.tar.gz", hash = "sha256:23478f88c37f27d76ac8aee6c905017a143b0b1b886c3c9f66bc2fd94f9f5783"},
+]
