@@ -142,4 +142,3 @@ def get_quote_buy(self):
             return False
         except SolanaRpcException:
             return False
-        return False
