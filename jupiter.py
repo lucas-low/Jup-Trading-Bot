@@ -68,35 +68,37 @@ class JupiterExchange:
         # Return a simulated transaction ID or result
         return "SimulatedTxId1234"
 
-    def get_quote_buy(self):
-        try:
-            start_dt = dt.datetime.now()
-            amt = int(self.amount_to_buy_usdc * (10 ** USDC_DECIMALS))
-            r = requests.get(f"{BASE_URL}/quote?inputMint={USDC_ADDRESS}&outputMint={JUP_ADDRESS}&amount={amt}&slippageBps={self.slippage}&swapMode=ExactIn")
-            #print(json.dumps(r.json(), indent=4))
-            print(f"[{dt.datetime.now()}] Took {(dt.datetime.now() - start_dt).total_seconds():.2f} for BUY quote")
-            data = r.json()
-            if 'error' in data:
-                print(f"[{dt.datetime.now()}] {data}")
+   def get_quote_buy(self):
+    try:
+        start_dt = dt.datetime.now()
+        amt = int(self.amount_to_buy_usdc * (10 ** USDC_DECIMALS))
+        r = requests.get(f"{BASE_URL}/quote?inputMint={USDC_ADDRESS}&outputMint={JUP_ADDRESS}&amount={amt}&slippageBps={self.slippage}&swapMode=ExactIn")
+        print(f"[{dt.datetime.now()}] Took {(dt.datetime.now() - start_dt).total_seconds():.2f} for BUY quote")
+        r.raise_for_status()  # This will raise an HTTPError if the HTTP request returned an unsuccessful status code.
+        data = r.json()
+        if 'error' in data:
+            print(f"[{dt.datetime.now()}] {data}")
+        else:
+            amount_in_human = Decimal(data['inAmount']) / (10 ** USDC_DECIMALS)
+            amount_out_human = Decimal(data['outAmount']) / (10 ** JUP_DECIMALS)
+            amount_out_slippage_thresh_human = Decimal(data['otherAmountThreshold']) / (10 ** JUP_DECIMALS)
+            price = amount_in_human / amount_out_human
+            price_min =  amount_in_human / amount_out_slippage_thresh_human
+            print(f"[{dt.datetime.now()}] Got quote: {price} ({price_min} w/ {self.slippage} bps slippage)")
+            if price_min < PRICE_THRESHOLD and price > PRICE_THRESHOLD_LOWER:
+                print('yes')
+                return data
             else:
-                amount_in_human = Decimal(data['inAmount']) / (10 ** USDC_DECIMALS)
-                amount_out_human = Decimal(data['outAmount']) / (10 ** JUP_DECIMALS)
-                amount_out_slippage_thresh_human = Decimal(data['otherAmountThreshold']) / (10 ** JUP_DECIMALS)
-                price = amount_in_human / amount_out_human
-                price_min =  amount_in_human / amount_out_slippage_thresh_human
-                print(f"[{dt.datetime.now()}] Got quote: {price} ({price_min} w/ {self.slippage} bps slippage)")
-                if price_min < PRICE_THRESHOLD and price > PRICE_THRESHOLD_LOWER:
-                    print('yes')
-                    return data
-                else:
-                    print(f'no - {PRICE_THRESHOLD=}')
-                    self.slippage -= 500
-                    if self.slippage <= 100:
-                        self.slippage = 100
-                    return None
-        except:
-            print(f"[{dt.datetime.now()}] ERROR {r.text}")
-            raise
+                print(f'no - {PRICE_THRESHOLD=}')
+                self.slippage -= 500
+                if self.slippage <= 100:
+                    self.slippage = 100
+                return None
+    except requests.HTTPError as http_err:
+        print(f"[{dt.datetime.now()}] HTTP error occurred: {http_err}")  
+    except Exception as err:
+        print(f"[{dt.datetime.now()}] Other error occurred: {err}")  
+        raise
 
     def get_swap_tx(self, quote, use_shared_accounts):
         r = requests.post(
