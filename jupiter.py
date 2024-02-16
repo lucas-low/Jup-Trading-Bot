@@ -68,7 +68,9 @@ class JupiterExchange:
         # Return a simulated transaction ID or result
         return "SimulatedTxId1234"
 
-   def get_quote_buy(self):
+
+            
+def get_quote_buy(self):
     try:
         start_dt = dt.datetime.now()
         amt = int(self.amount_to_buy_usdc * (10 ** USDC_DECIMALS))
