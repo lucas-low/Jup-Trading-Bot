@@ -26,7 +26,7 @@ PRICE_THRESHOLD_LOWER = Decimal('0.3')
 USDC_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 USDC_DECIMALS = 6
 
-PUBKEY = 'INSERT YOUR PUBLIC WALLET ADDRESS HERE'
+PUBKEY = None
 
 # this should match the priv key of your pub key - export it from phantom
 def read_keypair_from_file(keypath='./key'):
@@ -55,13 +55,14 @@ def read_keypair_from_file(keypath='./key'):
     except ValueError as e:
         raise ValueError(f"Error reading keypair: {e}")
 
-# Use the function to read the keypair
+# reads the keypair from the file and sets the global PUBKEY variable
 try:
     keypair = read_keypair_from_file()
-    # Proceed with using `keypair` for further operations...
+    PUBKEY = str(keypair.pubkey())  # Set the global PUBKEY variable
 except Exception as error:
     print(f"An error occurred while reading the keypair: {error}")
     sys.exit(1)
+
 
 class JupiterExchange:
     def __init__(self):
@@ -96,23 +97,30 @@ class JupiterExchange:
             return None
 
     def get_swap_tx(self, quote, use_shared_accounts):
-        r = requests.post(
-            f"{BASE_URL}/swap", json={
-                'userPublicKey': PUBKEY,
-                'wrapAndUnwrapSol': True,
-                'useSharedAccounts': use_shared_accounts,
-                'quoteResponse': quote,
-                'prioritizationFeeLamports': 50_000_000 # 0.05 SOL
-            }
+        payload = {
+            'userPublicKey': PUBKEY,
+            'wrapAndUnwrapSol': True,
+            'useSharedAccounts': use_shared_accounts,
+            'quoteResponse': quote,
+            'prioritizationFeeLamports': 50_000_000  # 0.05 SOL
+        }
+        print(f"Request payload for swap: {payload}") 
+        r = requests.post(f"{BASE_URL}/swap", json=payload)
+        print(f"Swap request response: {r.json()}")
+        print(f"Making request to {r.url} with payload:")
+        print(json.dumps(payload, indent=4)
         )
+        
         try:
             r.raise_for_status()
             return r.json()['swapTransaction']
         except requests.HTTPError as http_err:
             print(f"[{dt.datetime.now()}] HTTP error occurred: {http_err}")
-            return None
-        except KeyError:
-            print(f"error getting swap tx {r.json()}")
+            try:
+                error_response = r.json()  # Attempt to parse JSON error response
+                print(f"Error details: {error_response}")
+            except ValueError:
+                    print("Failed to parse error response as JSON")
             return None
 
     async def swap(self, quote, use_shared_accounts=True):
