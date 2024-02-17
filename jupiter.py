@@ -76,56 +76,24 @@ class JupiterExchange:
         self.solana_client = AsyncClient(rpc_url)
         self.slippage = 3000
 
-        # Simulated method
     def get_quote_buy(self):
-        # ... [other simulation setup code] ...
-        # Instead of making an actual request, return a simulated response
-        return {
-            'inAmount': '500000',  # Simulated amount in USDC (5 USDC)
-            'outAmount': '1500000',  # Simulated amount out in JUP (15 JUP)
-            'otherAmountThreshold': '1400000',  # Simulated slippage threshold amount
-        }
-
-    # Simulated method
-    async def swap(self, quote, use_shared_accounts=True):
-        # Log the action instead of executing it
-        print(f"Simulated swap with quote: {quote}")
-        # Return a simulated transaction ID or result
-        return "SimulatedTxId1234"
-
-
-            
-def get_quote_buy(self):
-    try:
-        start_dt = dt.datetime.now()
-        amt = int(self.amount_to_buy_usdc * (10 ** USDC_DECIMALS))
-        r = requests.get(f"{BASE_URL}/quote?inputMint={USDC_ADDRESS}&outputMint={JUP_ADDRESS}&amount={amt}&slippageBps={self.slippage}&swapMode=ExactIn")
-        print(f"[{dt.datetime.now()}] Took {(dt.datetime.now() - start_dt).total_seconds():.2f} for BUY quote")
-        r.raise_for_status()  # This will raise an HTTPError if the HTTP request returned an unsuccessful status code.
-        data = r.json()
-        if 'error' in data:
-            print(f"[{dt.datetime.now()}] {data}")
-        else:
-            amount_in_human = Decimal(data['inAmount']) / (10 ** USDC_DECIMALS)
-            amount_out_human = Decimal(data['outAmount']) / (10 ** JUP_DECIMALS)
-            amount_out_slippage_thresh_human = Decimal(data['otherAmountThreshold']) / (10 ** JUP_DECIMALS)
-            price = amount_in_human / amount_out_human
-            price_min =  amount_in_human / amount_out_slippage_thresh_human
-            print(f"[{dt.datetime.now()}] Got quote: {price} ({price_min} w/ {self.slippage} bps slippage)")
-            if price_min < PRICE_THRESHOLD and price > PRICE_THRESHOLD_LOWER:
-                print('yes')
-                return data
-            else:
-                print(f'no - {PRICE_THRESHOLD=}')
-                self.slippage -= 500
-                if self.slippage <= 100:
-                    self.slippage = 100
+        try:
+            start_dt = dt.datetime.now()
+            amt = int(self.amount_to_buy_usdc * (10 ** USDC_DECIMALS))
+            r = requests.get(f"{BASE_URL}/quote?inputMint={USDC_ADDRESS}&outputMint={JUP_ADDRESS}&amount={amt}&slippageBps={self.slippage}&swapMode=ExactIn")
+            print(f"[{dt.datetime.now()}] Took {(dt.datetime.now() - start_dt).total_seconds():.2f} seconds for BUY quote")
+            r.raise_for_status()  # This will raise an HTTPError if the HTTP request returned an unsuccessful status code.
+            data = r.json()
+            if 'error' in data:
+                print(f"[{dt.datetime.now()}] {data}")
                 return None
-    except requests.HTTPError as http_err:
-        print(f"[{dt.datetime.now()}] HTTP error occurred: {http_err}")  
-    except Exception as err:
-        print(f"[{dt.datetime.now()}] Other error occurred: {err}")  
-        raise
+            return data
+        except requests.HTTPError as http_err:
+            print(f"[{dt.datetime.now()}] HTTP error occurred: {http_err}")
+            return None
+        except Exception as err:
+            print(f"[{dt.datetime.now()}] Other error occurred: {err}")
+            return None
 
     def get_swap_tx(self, quote, use_shared_accounts):
         r = requests.post(
@@ -138,27 +106,50 @@ def get_quote_buy(self):
             }
         )
         try:
+            r.raise_for_status()
             return r.json()['swapTransaction']
+        except requests.HTTPError as http_err:
+            print(f"[{dt.datetime.now()}] HTTP error occurred: {http_err}")
+            return None
         except KeyError:
             print(f"error getting swap tx {r.json()}")
-            raise
+            return None
 
     async def swap(self, quote, use_shared_accounts=True):
         swap_tx = self.get_swap_tx(quote, use_shared_accounts=use_shared_accounts)
         if swap_tx is None:
             return False
         raw_tx = solders.transaction.VersionedTransaction.from_bytes(base64.b64decode(swap_tx))
-        signature = kp.sign_message(solders.message.to_bytes_versioned(raw_tx.message))
+        signature = keypair.sign_message(solders.message.to_bytes_versioned(raw_tx.message))
         signed_tx = solders.transaction.VersionedTransaction.populate(raw_tx.message, [signature])
 
         try:
             txid = await self.solana_client.send_transaction(
                 signed_tx,
-                opts=TxOpts(skip_confirmation=True, skip_preflight=True, max_retries=3),
+                opts=TxOpts(skip_confirmation=False, skip_preflight=False, max_retries=3),
             )
-            print(json.loads(txid.to_json())['result'])
+            print(f"Transaction ID: {json.loads(txid.to_json())['result']}")
             return True
-        except UnconfirmedTxError:
+        except UnconfirmedTxError as e:
+            print(f"Transaction could not be confirmed: {e}")
             return False
-        except SolanaRpcException:
+        except SolanaRpcException as e:
+            print(f"RPC exception occurred: {e}")
             return False
+
+    #     # Simulated method
+    # def get_quote_buy(self):
+    #     # ... [other simulation setup code] ...
+    #     # Instead of making an actual request, return a simulated response
+    #     return {
+    #         'inAmount': '500000',  # Simulated amount in USDC (5 USDC)
+    #         'outAmount': '1500000',  # Simulated amount out in JUP (15 JUP)
+    #         'otherAmountThreshold': '1400000',  # Simulated slippage threshold amount
+    #     }
+
+    # # Simulated method
+    # async def swap(self, quote, use_shared_accounts=True):
+    #     # Log the action instead of executing it
+    #     print(f"Simulated swap with quote: {quote}")
+    #     # Return a simulated transaction ID or result
+    #     return "SimulatedTxId1234"
