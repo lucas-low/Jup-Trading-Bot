@@ -11,6 +11,7 @@ import json
 from decimal import Decimal
 import datetime as dt
 import sys
+import httpx
 
 RPC_FILE = './rpc'
 with open(RPC_FILE, 'r') as f: 
@@ -61,7 +62,6 @@ except Exception as error:
     print(f"An error occurred while reading the keypair: {error}")
     sys.exit(1)
 
-
 class JupiterExchange:
     def __init__(self):
         self.amount_to_buy_usdc = Decimal(input('enter amount to buy in usdc:\t').strip())
@@ -76,19 +76,21 @@ class JupiterExchange:
         self.solana_client = AsyncClient(rpc_url)
         self.slippage = 3000
 
-    def get_quote_buy(self):
+    async def get_quote_buy(self):
         try:
             start_dt = dt.datetime.now()
             amt = int(self.amount_to_buy_usdc * (10 ** USDC_DECIMALS))
-            r = requests.get(f"{BASE_URL}/quote?inputMint={USDC_ADDRESS}&outputMint={JUP_ADDRESS}&amount={amt}&slippageBps={self.slippage}&swapMode=ExactIn")
-            print(f"[{dt.datetime.now()}] Took {(dt.datetime.now() - start_dt).total_seconds():.2f} seconds for BUY quote")
-            r.raise_for_status()  # This will raise an HTTPError if the HTTP request returned an unsuccessful status code.
-            data = r.json()
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                        f"{BASE_URL}/quote?inputMint={USDC_ADDRESS}&outputMint={JUP_ADDRESS}&amount={amt}&slippageBps={self.slippage}&swapMode=ExactIn"
+                    )
+            response.raise_for_status() 
+            data = response.json()
             if 'error' in data:
                 print(f"[{dt.datetime.now()}] {data}")
                 return None
             return data
-        except requests.HTTPError as http_err:
+        except httpx.HTTPError as http_err:
             print(f"[{dt.datetime.now()}] HTTP error occurred: {http_err}")
             return None
         except Exception as err:
