@@ -26,7 +26,6 @@ PRICE_THRESHOLD_LOWER = Decimal('0.3')
 USDC_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 USDC_DECIMALS = 6
 
-PUBKEY = None
 
 # this should match the priv key of your pub key - export it from phantom
 def read_keypair_from_file(keypath='./key'):
@@ -58,7 +57,6 @@ def read_keypair_from_file(keypath='./key'):
 # reads the keypair from the file and sets the global PUBKEY variable
 try:
     keypair = read_keypair_from_file()
-    PUBKEY = str(keypair.pubkey())  # Set the global PUBKEY variable
 except Exception as error:
     print(f"An error occurred while reading the keypair: {error}")
     sys.exit(1)
@@ -67,6 +65,7 @@ except Exception as error:
 class JupiterExchange:
     def __init__(self):
         self.amount_to_buy_usdc = Decimal(input('enter amount to buy in usdc:\t').strip())
+        self.user_pubkey = str(keypair.pubkey()) 
         print(f"{PRICE_THRESHOLD=} {PRICE_THRESHOLD_LOWER=}")
         print(f"{JUP_ADDRESS=}")
         print(f"{JUP_DECIMALS=}")
@@ -98,7 +97,7 @@ class JupiterExchange:
 
     def get_swap_tx(self, quote, use_shared_accounts):
         payload = {
-            'userPublicKey': PUBKEY,
+            'userPublicKey': self.user_pubkey, 
             'wrapAndUnwrapSol': True,
             'useSharedAccounts': use_shared_accounts,
             'quoteResponse': quote,
