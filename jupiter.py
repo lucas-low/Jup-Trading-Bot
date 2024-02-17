@@ -10,6 +10,7 @@ from solana.rpc.core import UnconfirmedTxError
 import json
 from decimal import Decimal
 import datetime as dt
+import sys
 
 RPC_FILE = './rpc'
 with open(RPC_FILE, 'r') as f: 
@@ -28,20 +29,39 @@ USDC_DECIMALS = 6
 PUBKEY = 'INSERT YOUR PUBLIC WALLET ADDRESS HERE'
 
 # this should match the priv key of your pub key - export it from phantom
-KEYPATH = './key'
-with open(KEYPATH, 'r') as f: 
-    address = f.readline().strip()
-    exported_secret = f.readline().strip()
+def read_keypair_from_file(keypath='./key'):
+    try:
+        with open(keypath, 'r') as key_file:
+            address = key_file.readline().strip()
+            exported_secret = key_file.readline().strip()
 
-print(f"Address: {address}")
-print(f"Exported Secret (Base58): {exported_secret}")
+            if not address or not exported_secret:
+                raise ValueError("Key file is incomplete. It must contain a public address and an exported secret key.")
 
+            # print(f"Address: {address}")
+            # print(f"Exported Secret (Base58): {exported_secret}")
 
-exported_bytes=base58.b58decode(exported_secret)
-kp = Keypair.from_bytes(exported_bytes)
+            exported_bytes = base58.b58decode(exported_secret)
+            keypair = Keypair.from_bytes(exported_bytes)
 
-# sanity check
-assert str(kp.pubkey()) == address, f"{kp.pubkey()} != {address}"
+            # Sanity check
+            if str(keypair.pubkey()) != address:
+                raise ValueError(f"Public key does not match the address in the key file. {keypair.pubkey()} != {address}")
+
+            return keypair
+
+    except FileNotFoundError:
+        raise FileNotFoundError(f"The key file at {keypath} was not found.")
+    except ValueError as e:
+        raise ValueError(f"Error reading keypair: {e}")
+
+# Use the function to read the keypair
+try:
+    keypair = read_keypair_from_file()
+    # Proceed with using `keypair` for further operations...
+except Exception as error:
+    print(f"An error occurred while reading the keypair: {error}")
+    sys.exit(1)
 
 class JupiterExchange:
     def __init__(self):
