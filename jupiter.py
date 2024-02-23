@@ -11,7 +11,6 @@ import json
 from decimal import Decimal
 import datetime as dt
 import sys
-import httpx
 
 RPC_FILE = './rpc'
 with open(RPC_FILE, 'r') as f: 
@@ -24,11 +23,10 @@ JUP_DECIMALS = 6
 #JUP_DECIMALS = 9
 PRICE_THRESHOLD = Decimal('0.8')
 PRICE_THRESHOLD_LOWER = Decimal('0.3')
-# USDC_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-# devnet USDC
-USDC_ADDRESS = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
+USDC_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 USDC_DECIMALS = 6
 
+PUBKEY = 'INSERT YOUR PUBLIC WALLET ADDRESS HERE'
 
 # this should match the priv key of your pub key - export it from phantom
 def read_keypair_from_file(keypath='./key'):
@@ -57,9 +55,10 @@ def read_keypair_from_file(keypath='./key'):
     except ValueError as e:
         raise ValueError(f"Error reading keypair: {e}")
 
-# reads the keypair from the file and sets the global PUBKEY variable
+# Use the function to read the keypair
 try:
     keypair = read_keypair_from_file()
+    # Proceed with using `keypair` for further operations...
 except Exception as error:
     print(f"An error occurred while reading the keypair: {error}")
     sys.exit(1)
@@ -67,7 +66,6 @@ except Exception as error:
 class JupiterExchange:
     def __init__(self):
         self.amount_to_buy_usdc = Decimal(input('enter amount to buy in usdc:\t').strip())
-        self.user_pubkey = str(keypair.pubkey()) 
         print(f"{PRICE_THRESHOLD=} {PRICE_THRESHOLD_LOWER=}")
         print(f"{JUP_ADDRESS=}")
         print(f"{JUP_DECIMALS=}")
@@ -78,89 +76,89 @@ class JupiterExchange:
         self.solana_client = AsyncClient(rpc_url)
         self.slippage = 3000
 
-    async def get_quote_buy(self):
-        try:
-            start_dt = dt.datetime.now()
-            amt = int(self.amount_to_buy_usdc * (10 ** USDC_DECIMALS))
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                        f"{BASE_URL}/quote?inputMint={USDC_ADDRESS}&outputMint={JUP_ADDRESS}&amount={amt}&slippageBps={self.slippage}&swapMode=ExactIn"
-                    )
-            response.raise_for_status() 
-            data = response.json()
-            if 'error' in data:
-                print(f"[{dt.datetime.now()}] {data}")
+        # Simulated method
+    def get_quote_buy(self):
+        # ... [other simulation setup code] ...
+        # Instead of making an actual request, return a simulated response
+        return {
+            'inAmount': '500000',  # Simulated amount in USDC (5 USDC)
+            'outAmount': '1500000',  # Simulated amount out in JUP (15 JUP)
+            'otherAmountThreshold': '1400000',  # Simulated slippage threshold amount
+        }
+
+    # Simulated method
+    async def swap(self, quote, use_shared_accounts=True):
+        # Log the action instead of executing it
+        print(f"Simulated swap with quote: {quote}")
+        # Return a simulated transaction ID or result
+        return "SimulatedTxId1234"
+
+
+            
+def get_quote_buy(self):
+    try:
+        start_dt = dt.datetime.now()
+        amt = int(self.amount_to_buy_usdc * (10 ** USDC_DECIMALS))
+        r = requests.get(f"{BASE_URL}/quote?inputMint={USDC_ADDRESS}&outputMint={JUP_ADDRESS}&amount={amt}&slippageBps={self.slippage}&swapMode=ExactIn")
+        print(f"[{dt.datetime.now()}] Took {(dt.datetime.now() - start_dt).total_seconds():.2f} for BUY quote")
+        r.raise_for_status()  # This will raise an HTTPError if the HTTP request returned an unsuccessful status code.
+        data = r.json()
+        if 'error' in data:
+            print(f"[{dt.datetime.now()}] {data}")
+        else:
+            amount_in_human = Decimal(data['inAmount']) / (10 ** USDC_DECIMALS)
+            amount_out_human = Decimal(data['outAmount']) / (10 ** JUP_DECIMALS)
+            amount_out_slippage_thresh_human = Decimal(data['otherAmountThreshold']) / (10 ** JUP_DECIMALS)
+            price = amount_in_human / amount_out_human
+            price_min =  amount_in_human / amount_out_slippage_thresh_human
+            print(f"[{dt.datetime.now()}] Got quote: {price} ({price_min} w/ {self.slippage} bps slippage)")
+            if price_min < PRICE_THRESHOLD and price > PRICE_THRESHOLD_LOWER:
+                print('yes')
+                return data
+            else:
+                print(f'no - {PRICE_THRESHOLD=}')
+                self.slippage -= 500
+                if self.slippage <= 100:
+                    self.slippage = 100
                 return None
-            return data
-        except httpx.HTTPError as http_err:
-            print(f"[{dt.datetime.now()}] HTTP error occurred: {http_err}")
-            return None
-        except Exception as err:
-            print(f"[{dt.datetime.now()}] Other error occurred: {err}")
-            return None
+    except requests.HTTPError as http_err:
+        print(f"[{dt.datetime.now()}] HTTP error occurred: {http_err}")  
+    except Exception as err:
+        print(f"[{dt.datetime.now()}] Other error occurred: {err}")  
+        raise
 
     def get_swap_tx(self, quote, use_shared_accounts):
-        payload = {
-            'userPublicKey': self.user_pubkey, 
-            'wrapAndUnwrapSol': True,
-            'useSharedAccounts': use_shared_accounts,
-            'quoteResponse': quote,
-            'prioritizationFeeLamports': 50_000_000  # 0.05 SOL
-        }
-        print(f"Request payload for swap: {payload}") 
-        r = requests.post(f"{BASE_URL}/swap", json=payload)
-        print(f"Swap request response: {r.json()}")
-        print(f"Making request to {r.url} with payload:")
-        print(json.dumps(payload, indent=4)
+        r = requests.post(
+            f"{BASE_URL}/swap", json={
+                'userPublicKey': PUBKEY,
+                'wrapAndUnwrapSol': True,
+                'useSharedAccounts': use_shared_accounts,
+                'quoteResponse': quote,
+                'prioritizationFeeLamports': 50_000_000 # 0.05 SOL
+            }
         )
-        
         try:
-            r.raise_for_status()
             return r.json()['swapTransaction']
-        except requests.HTTPError as http_err:
-            print(f"[{dt.datetime.now()}] HTTP error occurred: {http_err}")
-            try:
-                error_response = r.json()  # Attempt to parse JSON error response
-                print(f"Error details: {error_response}")
-            except ValueError:
-                    print("Failed to parse error response as JSON")
-            return None
+        except KeyError:
+            print(f"error getting swap tx {r.json()}")
+            raise
 
     async def swap(self, quote, use_shared_accounts=True):
         swap_tx = self.get_swap_tx(quote, use_shared_accounts=use_shared_accounts)
         if swap_tx is None:
             return False
         raw_tx = solders.transaction.VersionedTransaction.from_bytes(base64.b64decode(swap_tx))
-        signature = keypair.sign_message(solders.message.to_bytes_versioned(raw_tx.message))
+        signature = kp.sign_message(solders.message.to_bytes_versioned(raw_tx.message))
         signed_tx = solders.transaction.VersionedTransaction.populate(raw_tx.message, [signature])
 
         try:
             txid = await self.solana_client.send_transaction(
                 signed_tx,
-                opts=TxOpts(skip_confirmation=False, skip_preflight=False, max_retries=3),
+                opts=TxOpts(skip_confirmation=True, skip_preflight=True, max_retries=3),
             )
-            print(f"Transaction ID: {json.loads(txid.to_json())['result']}")
+            print(json.loads(txid.to_json())['result'])
             return True
-        except UnconfirmedTxError as e:
-            print(f"Transaction could not be confirmed: {e}")
+        except UnconfirmedTxError:
             return False
-        except SolanaRpcException as e:
-            print(f"RPC exception occurred: {e}")
+        except SolanaRpcException:
             return False
-
-    #     # Simulated method
-    # def get_quote_buy(self):
-    #     # ... [other simulation setup code] ...
-    #     # Instead of making an actual request, return a simulated response
-    #     return {
-    #         'inAmount': '500000',  # Simulated amount in USDC (5 USDC)
-    #         'outAmount': '1500000',  # Simulated amount out in JUP (15 JUP)
-    #         'otherAmountThreshold': '1400000',  # Simulated slippage threshold amount
-    #     }
-
-    # # Simulated method
-    # async def swap(self, quote, use_shared_accounts=True):
-    #     # Log the action instead of executing it
-    #     print(f"Simulated swap with quote: {quote}")
-    #     # Return a simulated transaction ID or result
-    #     return "SimulatedTxId1234"
